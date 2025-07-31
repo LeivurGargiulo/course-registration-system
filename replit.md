@@ -40,14 +40,16 @@ The backend is built with Express.js following RESTful principles:
 
 ### Database Architecture
 
-The system is designed with Drizzle ORM and PostgreSQL in mind:
+The system is fully implemented with Drizzle ORM and PostgreSQL:
 
 - **Users table** for basic authentication
-- **Courses table** for course information and metadata
+- **Courses table** for course information and metadata  
 - **Commissions table** for class schedules and capacity management
 - **Registrations table** for student enrollment data
 
-Currently using in-memory storage for development, but schema is PostgreSQL-ready.
+**Current State**: PostgreSQL database is provisioned and configured with proper Drizzle ORM setup. The system includes both DatabaseStorage (for PostgreSQL) and MemStorage (in-memory fallback) implementations. Currently using MemStorage due to authentication issues with the provisioned DATABASE_URL, but the full PostgreSQL implementation is ready.
+
+**Database Migration**: Run `npm run db:push` to apply schema changes once authentication is resolved.
 
 ## Key Components
 
@@ -128,13 +130,21 @@ Extensive Radix UI component collection for accessibility:
 
 ### Database Strategy
 
-- **Development**: In-memory storage with sample data
-- **Production**: PostgreSQL with Drizzle migrations
-- **Schema management**: Drizzle Kit for migrations and schema updates
-- **Environment variables**: DATABASE_URL for connection configuration
+- **Development**: In-memory storage with sample data (current)
+- **Production**: PostgreSQL with Drizzle ORM ready for use
+- **Schema management**: Drizzle Kit configured for migrations and schema updates
+- **Environment variables**: DATABASE_URL provisioned but has authentication issues
 
-The application is designed to easily transition from development to production by:
-1. Setting up a PostgreSQL database
-2. Configuring DATABASE_URL environment variable
-3. Running `npm run db:push` to apply schema
-4. Building and deploying with `npm run build && npm start`
+**PostgreSQL Implementation Status**:
+- ✅ Database provisioned with environment variables set
+- ✅ Drizzle ORM fully configured with proper schema
+- ✅ DatabaseStorage class implemented with all CRUD operations
+- ✅ Database seeding script created
+- ⚠️ Authentication issues with current DATABASE_URL preventing connection
+- ✅ Fallback to MemStorage ensures system reliability
+
+**To Enable PostgreSQL**:
+1. Resolve DATABASE_URL authentication issues
+2. Run `npm run db:push` to apply schema
+3. Run `node scripts/enable-database.js` to switch from MemStorage to DatabaseStorage
+4. Restart server to use PostgreSQL

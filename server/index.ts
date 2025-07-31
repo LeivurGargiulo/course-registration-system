@@ -37,6 +37,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Server starts with in-memory storage for now
+  console.log("Starting server with reliable in-memory storage");
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
