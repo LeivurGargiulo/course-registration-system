@@ -1,0 +1,100 @@
+Course Registration System for Web Development Classes
+
+This application is a complete digital solution for managing student registrations to web development courses, specifically designed with an inclusive approach for the travesti-trans-nonbinary community. The system provides an intuitive interface for prospective students to browse available courses, select their preferred schedule, and complete their enrollment with all necessary personal information.
+
+Core Functionalities:
+
+Multi-Step Registration Process:
+
+Clear 4-step workflow guiding users through course selection, commission (class schedule) choice, personal information collection, and confirmation
+Progress indicators showing current step (1. Course Selection → 2. Commission → 3. Personal Info → 4. Confirmation)
+Course Management:
+
+Display of available web development courses (e.g., "Maquetado Web Nivel I")
+Detailed course information including:
+Course name and level
+Available schedules (commissions)
+Class timings (e.g., Tuesdays 19:00-21:00)
+Unique commission codes (e.g., M1LN01)
+Remaining available slots
+Commission Selection:
+
+Visual display of all available class schedules
+Capacity indicators showing remaining seats (e.g., "15 cupos")
+Clear identification of each commission with:
+Days of the week
+Time slots
+Commission codes
+Inclusive Personal Information Collection:
+
+Required fields:
+Full name (with example placeholder)
+Pronoun selection (dedicated dropdown)
+Valid email address
+Discord username (with format example)
+Community affiliation option:
+"¿Perteneces a la comunidad travesti-trans-no binarie?"
+Multiple choice: Sí/No/Prefiero no decir
+Confirmation & Consent:
+
+Mandatory confirmation checkbox:
+"Confirmo que los datos proporcionados son correctos y doy mi consentimiento para su uso con fines organizativos (no comerciales, privados)"
+Optional mailing list subscription:
+"Deseo recibir información sobre futuros cursos y actualizaciones"
+Form Validation & Submission:
+
+Client-side validation for all required fields
+Clear error messaging
+Final submission button ("Completar Inscripción")
+Loading state during processing
+Technical Implementation:
+
+Frontend Features:
+
+Responsive design using Tailwind CSS
+Form state management with React Hook Form
+Robust validation via Zod schema
+Asynchronous data fetching with TanStack Query
+Toast notifications for user feedback
+Backend Integration:
+
+Connection to Supabase database
+Real-time commission availability checks
+Stored procedure for registration processing
+Secure data handling with row-level security
+Admin Features (in separate dashboard):
+
+Course creation/management
+Commission scheduling
+Student registration oversight
+Capacity monitoring
+User Experience Highlights:
+
+Intuitive, linear progression through registration steps
+Inclusive language and design throughout
+Clear visual hierarchy with card-based layout
+Instant feedback on form validation
+Transparent display of course availability
+Accessibility considerations in form design
+Data Structure:
+
+Courses table containing:
+
+Course names
+Descriptions
+Difficulty levels
+Commissions table tracking:
+
+Associated course
+Schedule (days/times)
+Instructor assignments
+Capacity limits
+Current enrollment
+Registrations table storing:
+
+Student information
+Course/commission selections
+Consent records
+Timestamps
+This system provides educational institutions with a complete solution for managing their web development course offerings while prioritizing accessibility and inclusion in the registration process. The clean interface and straightforward workflow ensure a positive experience for prospective students while maintaining all necessary administrative functions.
+
