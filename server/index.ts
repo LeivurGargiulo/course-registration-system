@@ -38,19 +38,11 @@ app.use((req, res, next) => {
 
 (async () => {
   // Server starts with in-memory storage for now
-  console.log("Starting server with reliable in-memory storage");
+  console.log("Starting server with Replit Auth integration");
 
   const server = await registerRoutes(app);
 
-  // Seed users in development
-  if (process.env.NODE_ENV === 'development') {
-    try {
-      const { seedUsers } = await import('./seed');
-      await seedUsers();
-    } catch (error) {
-      console.error('Error seeding users:', error);
-    }
-  }
+  // Server ready with Replit Auth integration
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

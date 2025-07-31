@@ -1,162 +1,37 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertRegistrationSchema, loginSchema, passwordResetRequestSchema, passwordResetSchema, insertCommissionSchema, updateCommissionSchema, commissionCancellationSchema } from "@shared/schema";
-import { AuthService, requireAuth, requireAdmin, loadUser, configureSession } from "./auth";
-import { emailService } from "./email";
+import { setupAuth, isAuthenticated } from "./replitAuth";
+import { insertRegistrationSchema, insertCommissionSchema, updateCommissionSchema, commissionCancellationSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Configure session middleware
-  app.use(await configureSession());
-  
-  // Load user middleware
-  app.use(loadUser);
+  // Auth middleware
+  await setupAuth(app);
 
-  // Authentication routes
-  app.post("/api/auth/login", async (req, res) => {
+  // Auth routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const validationResult = loginSchema.safeParse(req.body);
-      if (!validationResult.success) {
-        return res.status(400).json({
-          message: "Datos de login inválidos",
-          errors: validationResult.error.issues,
-        });
-      }
-
-      const { username, password } = validationResult.data;
-      const user = await AuthService.authenticateUser(username, password);
-
-      if (!user) {
-        return res.status(401).json({ message: "Usuario o contraseña incorrectos" });
-      }
-
-      // Create session
-      req.session.userId = user.id;
-
-      res.json({ 
-        message: "Login exitoso", 
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          role: user.role,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          profileImageUrl: user.profileImageUrl,
-        }
-      });
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
     } catch (error) {
-      console.error("Error in login:", error);
-      res.status(500).json({ message: "Error interno del servidor" });
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
     }
   });
 
-  app.post("/api/auth/logout", (req, res) => {
-    req.session.destroy((err) => {
-      if (err) {
-        console.error("Error destroying session:", err);
-        return res.status(500).json({ message: "Error al cerrar sesión" });
-      }
-      res.json({ message: "Sesión cerrada exitosamente" });
-    });
-  });
-
-  app.get("/api/auth/user", requireAuth, async (req, res) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Usuario no encontrado" });
-    }
-
-    res.json({
-      id: req.user.id,
-      username: req.user.username,
-      email: req.user.email,
-      role: req.user.role,
-      firstName: req.user.firstName,
-      lastName: req.user.lastName,
-      profileImageUrl: req.user.profileImageUrl,
-    });
-  });
-
-  // Password reset routes
-  app.post("/api/auth/forgot-password", async (req, res) => {
-    try {
-      const validationResult = passwordResetRequestSchema.safeParse(req.body);
-      if (!validationResult.success) {
-        return res.status(400).json({
-          message: "Email inválido",
-          errors: validationResult.error.issues,
-        });
-      }
-
-      const { email } = validationResult.data;
-      const resetToken = await AuthService.generatePasswordResetToken(email);
-
-      if (resetToken) {
-        await emailService.sendPasswordResetEmail(email, resetToken);
-      }
-
-      // Always return success to prevent email enumeration
-      res.json({ message: "Si el email existe, recibirás un enlace para restablecer tu contraseña" });
-    } catch (error) {
-      console.error("Error in forgot password:", error);
-      res.status(500).json({ message: "Error interno del servidor" });
-    }
-  });
-
-  app.post("/api/auth/reset-password", async (req, res) => {
-    try {
-      const validationResult = passwordResetSchema.safeParse(req.body);
-      if (!validationResult.success) {
-        return res.status(400).json({
-          message: "Datos inválidos",
-          errors: validationResult.error.issues,
-        });
-      }
-
-      const { token, password } = validationResult.data;
-      const success = await AuthService.resetPassword(token, password);
-
-      if (!success) {
-        return res.status(400).json({ message: "Token inválido o expirado" });
-      }
-
-      res.json({ message: "Contraseña restablecida exitosamente" });
-    } catch (error) {
-      console.error("Error in reset password:", error);
-      res.status(500).json({ message: "Error interno del servidor" });
-    }
-  });
-
-  // Get all courses with commissions
-  app.get("/api/courses", async (_req, res) => {
+  // Course routes
+  app.get("/api/courses", async (req, res) => {
     try {
       const courses = await storage.getCourses();
       res.json(courses);
     } catch (error) {
       console.error("Error fetching courses:", error);
-      res.status(500).json({ message: "Error interno del servidor" });
+      res.status(500).json({ message: "Failed to fetch courses" });
     }
   });
 
-  // Get course by ID
-  app.get("/api/courses/:id", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const course = await storage.getCourse(id);
-      
-      if (!course) {
-        return res.status(404).json({ message: "Curso no encontrado" });
-      }
-      
-      res.json(course);
-    } catch (error) {
-      console.error("Error fetching course:", error);
-      res.status(500).json({ message: "Error interno del servidor" });
-    }
-  });
-
-  // Get commissions for a course
   app.get("/api/courses/:courseId/commissions", async (req, res) => {
     try {
       const { courseId } = req.params;
@@ -164,108 +39,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(commissions);
     } catch (error) {
       console.error("Error fetching commissions:", error);
-      res.status(500).json({ message: "Error interno del servidor" });
+      res.status(500).json({ message: "Failed to fetch commissions" });
     }
   });
 
-  // Get commission by ID
-  app.get("/api/commissions/:id", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const commission = await storage.getCommission(id);
-      
-      if (!commission) {
-        return res.status(404).json({ message: "Comisión no encontrada" });
-      }
-      
-      res.json(commission);
-    } catch (error) {
-      console.error("Error fetching commission:", error);
-      res.status(500).json({ message: "Error interno del servidor" });
-    }
-  });
-
-  // Create registration
+  // Registration routes
   app.post("/api/registrations", async (req, res) => {
     try {
-      // Validate request body
-      const validationResult = insertRegistrationSchema.safeParse(req.body);
+      const validatedData = insertRegistrationSchema.parse(req.body);
       
-      if (!validationResult.success) {
-        return res.status(400).json({
-          message: "Datos de inscripción inválidos",
-          errors: validationResult.error.issues,
-        });
-      }
-
-      const registrationData = validationResult.data;
-
-      // Check if commission exists and has available spots
-      const commission = await storage.getCommission(registrationData.commissionId);
+      // Check if commission exists and has capacity
+      const commission = await storage.getCommission(validatedData.commissionId);
       if (!commission) {
         return res.status(404).json({ message: "Comisión no encontrada" });
       }
-
-      if (commission.currentEnrollment >= commission.maxCapacity) {
-        return res.status(400).json({ message: "No hay cupos disponibles en esta comisión" });
-      }
-
-      // Check if course exists
-      const course = await storage.getCourse(registrationData.courseId);
-      if (!course) {
-        return res.status(404).json({ message: "Curso no encontrado" });
-      }
-
-      // Create registration
-      const registration = await storage.createRegistration(registrationData);
       
-      res.status(201).json({
-        message: "Inscripción completada exitosamente",
-        registration,
-      });
-    } catch (error) {
-      console.error("Error creating registration:", error);
-      res.status(500).json({ message: "Error interno del servidor" });
-    }
-  });
+      if (commission.currentEnrollment >= commission.maxCapacity) {
+        return res.status(400).json({ message: "La comisión está completa" });
+      }
 
-  // Get all registrations (admin endpoint)
-  app.get("/api/registrations", async (_req, res) => {
-    try {
-      const registrations = await storage.getRegistrations();
-      res.json(registrations);
+      const registration = await storage.createRegistration(validatedData);
+      res.status(201).json(registration);
     } catch (error) {
-      console.error("Error fetching registrations:", error);
-      res.status(500).json({ message: "Error interno del servidor" });
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Datos inválidos", 
+          errors: error.errors 
+        });
+      }
+      console.error("Error creating registration:", error);
+      res.status(500).json({ message: "Error al crear la inscripción" });
     }
   });
 
   // Admin routes (protected)
-  app.get("/api/admin/registrations", requireAuth, requireAdmin, async (_req, res) => {
+  app.get("/api/admin/registrations", isAuthenticated, async (req, res) => {
     try {
       const registrations = await storage.getRegistrations();
       res.json(registrations);
     } catch (error) {
       console.error("Error fetching registrations:", error);
-      res.status(500).json({ message: "Error interno del servidor" });
+      res.status(500).json({ message: "Failed to fetch registrations" });
     }
   });
 
-  // Commission management routes (admin only)
-  app.post("/api/admin/commissions", requireAuth, requireAdmin, async (req, res) => {
+  // Admin commission management
+  app.post("/api/admin/commissions", isAuthenticated, async (req, res) => {
     try {
       const validatedData = insertCommissionSchema.parse(req.body);
       
       // Check for schedule conflicts
       const hasConflict = await storage.checkScheduleConflict(
-        validatedData.courseId, 
-        validatedData.days, 
+        validatedData.courseId,
+        validatedData.days,
         validatedData.time
       );
       
       if (hasConflict) {
         return res.status(400).json({ 
-          message: "Conflicto de horario: Ya existe una comisión con el mismo día y horario para este curso" 
+          message: "Ya existe una comisión con el mismo horario para este curso" 
         });
       }
 
@@ -273,29 +105,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(commission);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: error.errors[0]?.message || "Datos inválidos" });
+        return res.status(400).json({ 
+          message: "Datos inválidos", 
+          errors: error.errors 
+        });
       }
+      console.error("Error creating commission:", error);
       res.status(500).json({ message: "Error al crear la comisión" });
     }
   });
 
-  app.put("/api/admin/commissions/:id", requireAuth, requireAdmin, async (req, res) => {
+  app.put("/api/admin/commissions/:id", isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
       const validatedData = updateCommissionSchema.parse({ ...req.body, id });
       
-      // Check for schedule conflicts if updating schedule
-      if (validatedData.days && validatedData.time) {
+      // Check for schedule conflicts if schedule data is being updated
+      if (validatedData.days || validatedData.time) {
+        const existing = await storage.getCommission(id);
+        if (!existing) {
+          return res.status(404).json({ message: "Comisión no encontrada" });
+        }
+        
         const hasConflict = await storage.checkScheduleConflict(
-          validatedData.courseId!, 
-          validatedData.days, 
-          validatedData.time,
-          id // Exclude current commission from conflict check
+          existing.courseId,
+          validatedData.days || existing.days,
+          validatedData.time || existing.time,
+          id
         );
         
         if (hasConflict) {
           return res.status(400).json({ 
-            message: "Conflicto de horario: Ya existe una comisión con el mismo día y horario" 
+            message: "Ya existe una comisión con el mismo horario para este curso" 
           });
         }
       }
@@ -304,23 +145,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(commission);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: error.errors[0]?.message || "Datos inválidos" });
+        return res.status(400).json({ 
+          message: "Datos inválidos", 
+          errors: error.errors 
+        });
       }
+      console.error("Error updating commission:", error);
       res.status(500).json({ message: "Error al actualizar la comisión" });
     }
   });
 
-  app.delete("/api/admin/commissions/:id", requireAuth, requireAdmin, async (req, res) => {
+  app.delete("/api/admin/commissions/:id", isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
+      const commission = await storage.getCommission(id);
+      
+      if (!commission) {
+        return res.status(404).json({ message: "Comisión no encontrada" });
+      }
+      
+      if (commission.currentEnrollment > 0) {
+        return res.status(400).json({ 
+          message: "No se puede eliminar una comisión con estudiantes inscriptos" 
+        });
+      }
+
       await storage.deleteCommission(id);
       res.json({ message: "Comisión eliminada exitosamente" });
     } catch (error) {
+      console.error("Error deleting commission:", error);
       res.status(500).json({ message: "Error al eliminar la comisión" });
     }
   });
 
-  app.post("/api/admin/commissions/:id/cancel", requireAuth, requireAdmin, async (req, res) => {
+  // Commission cancellation
+  app.post("/api/admin/commissions/:id/cancel", isAuthenticated, async (req, res) => {
     try {
       const { id } = req.params;
       const validatedData = commissionCancellationSchema.parse({ ...req.body, id });
@@ -329,40 +188,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!commission) {
         return res.status(404).json({ message: "Comisión no encontrada" });
       }
-
-      // Mark commission as inactive
-      await storage.updateCommission(id, { 
+      
+      await storage.updateCommission(id, {
         isActive: false,
-        cancelReason: validatedData.reason 
+        cancelReason: validatedData.reason
       });
-
-      // TODO: Send cancellation notifications to enrolled students if requested
-      if (validatedData.notifyStudents) {
-        console.log(`Notification would be sent to students about commission ${id} cancellation`);
-      }
-
+      
       res.json({ message: "Comisión cancelada exitosamente" });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: error.errors[0]?.message || "Datos inválidos" });
+        return res.status(400).json({ 
+          message: "Datos inválidos", 
+          errors: error.errors 
+        });
       }
+      console.error("Error cancelling commission:", error);
       res.status(500).json({ message: "Error al cancelar la comisión" });
     }
   });
 
-  app.get("/api/admin/commissions/low-enrollment", requireAuth, requireAdmin, async (req, res) => {
+  // Low enrollment commissions
+  app.get("/api/admin/commissions/low-enrollment", isAuthenticated, async (req, res) => {
     try {
       const threshold = parseInt(req.query.threshold as string) || 5;
-      const lowEnrollmentCommissions = await storage.getCommissionsWithLowEnrollment(threshold);
-      res.json(lowEnrollmentCommissions);
+      const commissions = await storage.getCommissionsWithLowEnrollment(threshold);
+      res.json(commissions);
     } catch (error) {
-      res.status(500).json({ message: "Error al obtener comisiones con baja inscripción" });
+      console.error("Error fetching low enrollment commissions:", error);
+      res.status(500).json({ message: "Failed to fetch low enrollment commissions" });
     }
-  });
-
-  // Health check endpoint
-  app.get("/api/health", (_req, res) => {
-    res.json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
   const httpServer = createServer(app);

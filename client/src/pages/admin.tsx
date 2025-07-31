@@ -21,7 +21,7 @@ import type { CourseWithCommissions, Registration, Commission, InsertCommission 
 export default function AdminDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { user, isLoading: authLoading, isAuthenticated, isAdmin } = useAuth();
+  const { user, isLoading: authLoading, isAuthenticated } = useAuth();
   
   // Commission form state
   const [isCommissionDialogOpen, setIsCommissionDialogOpen] = useState(false);
@@ -36,20 +36,20 @@ export default function AdminDashboard() {
     startDate: '',
   });
 
-  // Redirect if not authenticated or not admin
+  // Redirect if not authenticated
   useEffect(() => {
-    if (!authLoading && (!isAuthenticated || !isAdmin)) {
+    if (!authLoading && !isAuthenticated) {
       toast({
-        title: "Acceso denegado",
-        description: "Necesitas permisos de administrador para acceder a esta página",
+        title: "Unauthorized",
+        description: "You are logged out. Logging in again...",
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/login?message=" + encodeURIComponent("Necesitas permisos de administrador");
-      }, 1000);
+        window.location.href = "/api/login";
+      }, 500);
       return;
     }
-  }, [isAuthenticated, isAdmin, authLoading, toast]);
+  }, [isAuthenticated, authLoading, toast]);
 
   // Fetch courses
   const { data: courses, isLoading: coursesLoading } = useQuery<CourseWithCommissions[]>({
@@ -60,14 +60,14 @@ export default function AdminDashboard() {
   const { data: registrations, isLoading: registrationsLoading, error: registrationsError } = useQuery<Registration[]>({
     queryKey: ["/api/admin/registrations"],
     retry: false,
-    enabled: isAuthenticated && isAdmin,
+    enabled: isAuthenticated,
   });
 
   // Fetch low enrollment commissions
   const { data: lowEnrollmentCommissions } = useQuery<Commission[]>({
     queryKey: ["/api/admin/commissions/low-enrollment"],
     retry: false,
-    enabled: isAuthenticated && isAdmin,
+    enabled: isAuthenticated,
   });
 
   const getStatusBadge = (status: string) => {
