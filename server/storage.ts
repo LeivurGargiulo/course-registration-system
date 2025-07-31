@@ -1,5 +1,5 @@
 import { type User, type InsertUser, type Course, type InsertCourse, type Commission, type InsertCommission, type Registration, type InsertRegistration, type CourseWithCommissions, type CommissionWithAvailability } from "@shared/schema";
-import { users, courses, commissions, registrations } from "@shared/schema";
+import { users, courses, commissions, registrations, sessions } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { eq, desc } from "drizzle-orm";
 
@@ -10,7 +10,13 @@ export interface IStorage {
   // User methods
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByResetToken(token: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserLastLogin(id: string): Promise<void>;
+  setPasswordResetToken(id: string, token: string, expiry: Date): Promise<void>;
+  clearPasswordResetToken(id: string): Promise<void>;
+  updateUserPassword(id: string, hashedPassword: string): Promise<void>;
   
   // Course methods
   getCourses(): Promise<CourseWithCommissions[]>;
@@ -52,16 +58,59 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
+    const [user] = await this.db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await this.db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
+  async getUserByResetToken(token: string): Promise<User | undefined> {
+    const [user] = await this.db.select().from(users).where(eq(users.resetToken, token));
     return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db
+    const [user] = await this.db
       .insert(users)
-      .values(insertUser)
+      .values({
+        ...insertUser,
+        isActive: insertUser.isActive ?? true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
       .returning();
     return user;
+  }
+
+  async updateUserLastLogin(id: string): Promise<void> {
+    await this.db
+      .update(users)
+      .set({ lastLogin: new Date(), updatedAt: new Date() })
+      .where(eq(users.id, id));
+  }
+
+  async setPasswordResetToken(id: string, token: string, expiry: Date): Promise<void> {
+    await this.db
+      .update(users)
+      .set({ resetToken: token, resetTokenExpiry: expiry, updatedAt: new Date() })
+      .where(eq(users.id, id));
+  }
+
+  async clearPasswordResetToken(id: string): Promise<void> {
+    await this.db
+      .update(users)
+      .set({ resetToken: null, resetTokenExpiry: null, updatedAt: new Date() })
+      .where(eq(users.id, id));
+  }
+
+  async updateUserPassword(id: string, hashedPassword: string): Promise<void> {
+    await this.db
+      .update(users)
+      .set({ password: hashedPassword, updatedAt: new Date() })
+      .where(eq(users.id, id));
   }
 
   async getCourses(): Promise<CourseWithCommissions[]> {
@@ -185,7 +234,15 @@ export class MemStorage implements IStorage {
     this.initializeData();
   }
 
+  private async loadSampleUsers() {
+    // We'll now create users with properly hashed passwords
+    // This will be done by the seed script or through the authentication service
+    console.log('Sample users will be created via seed script for proper password hashing.');
+  }
+
   private initializeData() {
+    this.loadSampleUsers();
+    
     // Sample courses
     const sampleCourses = [
       {
@@ -324,11 +381,70 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.email === email,
+    );
+  }
+
+  async getUserByResetToken(token: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.resetToken === token,
+    );
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id,
+      isActive: insertUser.isActive ?? true,
+      resetToken: null,
+      resetTokenExpiry: null,
+      lastLogin: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
     this.users.set(id, user);
     return user;
+  }
+
+  async updateUserLastLogin(id: string): Promise<void> {
+    const user = this.users.get(id);
+    if (user) {
+      user.lastLogin = new Date();
+      user.updatedAt = new Date();
+      this.users.set(id, user);
+    }
+  }
+
+  async setPasswordResetToken(id: string, token: string, expiry: Date): Promise<void> {
+    const user = this.users.get(id);
+    if (user) {
+      user.resetToken = token;
+      user.resetTokenExpiry = expiry;
+      user.updatedAt = new Date();
+      this.users.set(id, user);
+    }
+  }
+
+  async clearPasswordResetToken(id: string): Promise<void> {
+    const user = this.users.get(id);
+    if (user) {
+      user.resetToken = null;
+      user.resetTokenExpiry = null;
+      user.updatedAt = new Date();
+      this.users.set(id, user);
+    }
+  }
+
+  async updateUserPassword(id: string, hashedPassword: string): Promise<void> {
+    const user = this.users.get(id);
+    if (user) {
+      user.password = hashedPassword;
+      user.updatedAt = new Date();
+      this.users.set(id, user);
+    }
   }
 
   async getCourses(): Promise<CourseWithCommissions[]> {

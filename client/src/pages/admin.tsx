@@ -1,27 +1,48 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
 import type { CourseWithCommissions, Registration } from "@shared/schema";
 
 export default function AdminDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user, isLoading: authLoading, isAuthenticated, isAdmin } = useAuth();
+
+  // Redirect if not authenticated or not admin
+  useEffect(() => {
+    if (!authLoading && (!isAuthenticated || !isAdmin)) {
+      toast({
+        title: "Acceso denegado",
+        description: "Necesitas permisos de administrador para acceder a esta página",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/login?message=" + encodeURIComponent("Necesitas permisos de administrador");
+      }, 1000);
+      return;
+    }
+  }, [isAuthenticated, isAdmin, authLoading, toast]);
 
   // Fetch courses
   const { data: courses, isLoading: coursesLoading } = useQuery<CourseWithCommissions[]>({
     queryKey: ["/api/courses"],
   });
 
-  // Fetch registrations
-  const { data: registrations, isLoading: registrationsLoading } = useQuery<Registration[]>({
+  // Fetch registrations with error handling
+  const { data: registrations, isLoading: registrationsLoading, error: registrationsError } = useQuery<Registration[]>({
     queryKey: ["/api/admin/registrations"],
+    retry: false,
+    enabled: isAuthenticated && isAdmin,
   });
 
   const getStatusBadge = (status: string) => {
@@ -44,12 +65,39 @@ export default function AdminDashboard() {
     return { color: "bg-emerald-500", label: "Disponible" };
   };
 
-  if (coursesLoading || registrationsLoading) {
+  // Handle authorization errors
+  useEffect(() => {
+    if (registrationsError && isUnauthorizedError(registrationsError as Error)) {
+      toast({
+        title: "No autorizado",
+        description: "Tu sesión ha expirado. Redirigiendo al login...",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 1500);
+    }
+  }, [registrationsError, toast]);
+
+  if (authLoading || coursesLoading || registrationsLoading) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
+      </div>
+    );
+  }
+
+  // Show error if not authenticated or not admin
+  if (!authLoading && (!isAuthenticated || !isAdmin)) {
+    return (
+      <div className="container mx-auto p-6">
+        <Alert variant="destructive">
+          <AlertDescription>
+            Acceso denegado. Necesitas permisos de administrador para ver esta página.
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
@@ -65,14 +113,24 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Panel de Administración</h1>
-          <p className="text-slate-600">Gestiona cursos, comisiones e inscripciones</p>
+          <p className="text-slate-600">
+            Bienvenido/a {user?.firstName || user?.username} - Gestiona cursos, comisiones e inscripciones
+          </p>
         </div>
-        <Button variant="outline" onClick={() => window.location.href = "/"}>
-          <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9.586l7.293 7.293a1 1 0 01-1.414 1.414L9.707 14.707z" clipRule="evenodd" />
-          </svg>
-          Volver al sitio
-        </Button>
+        <div className="space-x-2">
+          <Button variant="outline" onClick={() => window.location.href = "/api/auth/logout"}>
+            <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
+            </svg>
+            Cerrar sesión
+          </Button>
+          <Button variant="outline" onClick={() => window.location.href = "/"}>
+            <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9.586l7.293 7.293a1 1 0 01-1.414 1.414L9.707 14.707z" clipRule="evenodd" />
+            </svg>
+            Volver al sitio
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
