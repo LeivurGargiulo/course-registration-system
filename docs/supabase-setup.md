@@ -31,23 +31,24 @@ postgresql://postgres.abcdefghijklmnop:[YOUR-PASSWORD]@aws-0-sa-east-1.pooler.su
 
 1. In your Replit project, go to the **Secrets** tab (lock icon in left sidebar)
 2. Add a new secret:
-   - **Key**: `DATABASE_URL`
+   - **Key**: `SUPABASE_DATABASE_URL`
    - **Value**: Your complete Supabase connection string (with password replaced)
 3. Click "Add Secret"
 
-## Step 4: Enable Database
+## Step 4: Migrate to Supabase
 
-Once you've added the DATABASE_URL secret, run this command in the Replit console:
+Once you've added the SUPABASE_DATABASE_URL secret, run this command in the Replit console:
 
 ```bash
-node scripts/enable-supabase.js
+node scripts/migrate-to-supabase.js
 ```
 
 This will:
 - Test the connection to your Supabase database
 - Create all necessary tables (users, courses, commissions, registrations, sessions)
-- Add sample course data
+- Add sample course data  
 - Switch the application to use Supabase instead of in-memory storage
+- Disconnect from any existing Replit database
 
 ## Step 5: Restart Application
 

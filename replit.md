@@ -47,9 +47,9 @@ The system is fully implemented with Drizzle ORM and PostgreSQL:
 - **Commissions table** for class schedules and capacity management
 - **Registrations table** for student enrollment data
 
-**Current State**: System is fully configured for Supabase database integration. The system includes both DatabaseStorage (for Supabase/PostgreSQL) and MemStorage (in-memory fallback) implementations. Currently using MemStorage until user sets up Supabase credentials, but the full database implementation is ready.
+**Current State**: System has been disconnected from Replit's database and is using in-memory storage. Full Supabase integration is ready for migration with proper PostgreSQL driver configuration.
 
-**Database Migration**: Run `node scripts/enable-supabase.js` after setting up Supabase credentials to enable database storage.
+**Database Migration**: Run `node scripts/migrate-to-supabase.js` after setting up Supabase credentials to migrate to database storage.
 
 ## Key Components
 
@@ -143,11 +143,11 @@ Extensive Radix UI component collection for accessibility:
 - ✅ Comprehensive setup documentation provided
 - ✅ Fallback to MemStorage ensures system reliability
 
-**To Enable Supabase**:
-1. Follow instructions in `docs/supabase-setup.md` to create Supabase project
-2. Add DATABASE_URL secret with Supabase connection string
-3. Run `node scripts/enable-supabase.js` to set up database and switch storage
-4. Restart server to use Supabase
+**To Migrate to Supabase**:
+1. Follow instructions in `docs/supabase-setup.md` to create Supabase project  
+2. Add SUPABASE_DATABASE_URL secret with Supabase connection string
+3. Run `node scripts/migrate-to-supabase.js` to complete migration
+4. System automatically switches from in-memory to Supabase storage
 
 ## Recent Changes (January 31, 2025)
 

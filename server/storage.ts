@@ -71,12 +71,12 @@ export class DatabaseStorage implements IStorage {
     const allCourses = await db.select().from(courses);
     const allCommissions = await db.select().from(commissions);
     
-    return allCourses.map(course => {
-      const courseCommissions = allCommissions.filter(c => c.courseId === course.id);
+    return allCourses.map((course: Course) => {
+      const courseCommissions = allCommissions.filter((c: Commission) => c.courseId === course.id);
       return {
         ...course,
         commissions: courseCommissions,
-        availableCommissions: courseCommissions.filter(c => c.isActive).length,
+        availableCommissions: courseCommissions.filter((c: Commission) => c.isActive).length,
       };
     });
   }
@@ -94,7 +94,7 @@ export class DatabaseStorage implements IStorage {
   // Commission methods
   async getCommissionsByCourse(courseId: string): Promise<CommissionWithAvailability[]> {
     const courseCommissions = await db.select().from(commissions).where(eq(commissions.courseId, courseId));
-    return courseCommissions.map(commission => ({
+    return courseCommissions.map((commission: Commission) => ({
       ...commission,
       availableSpots: commission.maxCapacity - commission.currentEnrollment,
     }));
@@ -340,4 +340,5 @@ export class MemStorage implements IStorage {
   }
 }
 
+// Use MemStorage until user explicitly migrates to Supabase
 export const storage = new MemStorage();
