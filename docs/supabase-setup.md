@@ -25,6 +25,8 @@
 postgresql://postgres.abcdefghijklmnop:[YOUR-PASSWORD]@aws-0-sa-east-1.pooler.supabase.com:6543/postgres
 ```
 
+**Note**: Make sure to use the "Transaction pooler" connection string, not the "Direct connection" one, as it's optimized for serverless applications.
+
 ## Step 3: Add to Replit Secrets
 
 1. In your Replit project, go to the **Secrets** tab (lock icon in left sidebar)

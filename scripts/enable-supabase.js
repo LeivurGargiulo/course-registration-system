@@ -1,15 +1,10 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from 'ws';
+import { Pool } from 'pg';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// Configure neon for serverless (works with Supabase too)
-neonConfig.webSocketConstructor = ws;
 
 async function enableSupabase() {
   const databaseUrl = process.env.DATABASE_URL;
@@ -27,8 +22,10 @@ async function enableSupabase() {
   console.log('🚀 Testing Supabase connection...');
   
   try {
-    const pool = new Pool({ connectionString: databaseUrl });
-    const db = drizzle({ client: pool, schema: {} });
+    const pool = new Pool({ 
+      connectionString: databaseUrl,
+      ssl: { rejectUnauthorized: false }
+    });
     
     // Test connection
     console.log('📡 Connecting to Supabase...');
