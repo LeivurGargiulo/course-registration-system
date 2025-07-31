@@ -117,6 +117,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin routes
+  app.get("/api/admin/registrations", async (_req, res) => {
+    try {
+      const registrations = await storage.getRegistrations();
+      res.json(registrations);
+    } catch (error) {
+      console.error("Error fetching registrations:", error);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
   // Health check endpoint
   app.get("/api/health", (_req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
