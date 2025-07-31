@@ -124,16 +124,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async checkScheduleConflict(courseId: string, days: string, time: string, excludeId?: string): Promise<boolean> {
-    let query = db.select().from(commissions)
-      .where(eq(commissions.courseId, courseId))
-      .where(eq(commissions.days, days))
-      .where(eq(commissions.time, time));
+    const conflicts = await db.select().from(commissions)
+      .where(
+        excludeId 
+          ? sql`${commissions.courseId} = ${courseId} AND ${commissions.days} = ${days} AND ${commissions.time} = ${time} AND ${commissions.id} != ${excludeId}`
+          : sql`${commissions.courseId} = ${courseId} AND ${commissions.days} = ${days} AND ${commissions.time} = ${time}`
+      );
     
-    if (excludeId) {
-      query = query.where(ne(commissions.id, excludeId));
-    }
-    
-    const conflicts = await query;
     return conflicts.length > 0;
   }
 
@@ -340,4 +337,12 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Use DatabaseStorage in production with DATABASE_URL, otherwise MemStorage
+const createStorage = (): IStorage => {
+  if (process.env.DATABASE_URL && process.env.NODE_ENV === 'production') {
+    return new DatabaseStorage();
+  }
+  return new MemStorage();
+};
+
+export const storage = createStorage();

@@ -37,9 +37,53 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Server starts with in-memory storage for now
-  console.log("Starting server with Replit Auth integration");
+  // Initialize database if needed (for production deployment)
+  if (process.env.DATABASE_URL && process.env.NODE_ENV === 'production') {
+    try {
+      console.log("Initializing database for production...");
+      const { db } = await import("./db.js");
+      // Test connection
+      await db.execute(`SELECT 1`);
+      
+      // Check if courses table exists - if not, initialize
+      const tablesResult = await db.execute(`
+        SELECT COUNT(*) as count 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public' AND table_name = 'courses'
+      `);
+      
+      if (tablesResult.rows[0].count === 0) {
+        console.log("Database tables not found, running initialization...");
+        const { spawn } = await import('child_process');
+        const initProcess = spawn('node', ['scripts/init-database.js'], { 
+          stdio: 'inherit',
+          env: process.env 
+        });
+        
+        await new Promise((resolve, reject) => {
+          initProcess.on('close', (code) => {
+            if (code === 0) {
+              console.log("Database initialization completed successfully");
+              resolve(void 0);
+            } else {
+              console.log("Database initialization failed, continuing with in-memory storage");
+              resolve(void 0); // Don't fail startup, just log warning
+            }
+          });
+          initProcess.on('error', (err) => {
+            console.log("Database initialization error:", err.message);
+            resolve(void 0); // Don't fail startup
+          });
+        });
+      } else {
+        console.log("Database tables found, skipping initialization");
+      }
+    } catch (error) {
+      console.log("Database connection failed, using in-memory storage:", error instanceof Error ? error.message : 'Unknown error');
+    }
+  }
 
+  console.log("Starting server with Replit Auth integration");
   const server = await registerRoutes(app);
 
   // Server ready with Replit Auth integration
