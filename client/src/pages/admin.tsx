@@ -260,23 +260,23 @@ export default function AdminDashboard() {
   const activeCourses = courses?.filter(c => c.isActive).length || 0;
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Panel de Administración</h1>
-          <p className="text-slate-600">
-            Bienvenido/a {user?.firstName || user?.username} - Gestiona cursos, comisiones e inscripciones
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Panel de Administración</h1>
+          <p className="text-slate-600 text-sm sm:text-base">
+            Bienvenido/a {user?.firstName || user?.email} - Gestiona cursos, comisiones e inscripciones
           </p>
         </div>
-        <div className="space-x-2">
-          <Button variant="outline" onClick={() => window.location.href = "/api/auth/logout"}>
+        <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2">
+          <Button variant="outline" onClick={() => window.location.href = "/api/logout"} className="text-sm sm:text-base">
             <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
             </svg>
             Cerrar sesión
           </Button>
-          <Button variant="outline" onClick={() => window.location.href = "/"}>
+          <Button variant="outline" onClick={() => window.location.href = "/"} className="text-sm sm:text-base">
             <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9.586l7.293 7.293a1 1 0 01-1.414 1.414L9.707 14.707z" clipRule="evenodd" />
             </svg>
@@ -286,18 +286,18 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center mr-3">
-                <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
+          <CardContent className="p-3 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-primary/10 rounded-lg flex items-center justify-center mb-2 sm:mb-0 sm:mr-3">
+                <svg className="w-3 h-3 sm:w-4 sm:h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-900">{confirmedRegistrations}</p>
-                <p className="text-sm text-slate-600">Inscripciones confirmadas</p>
+                <p className="text-lg sm:text-2xl font-bold text-slate-900">{confirmedRegistrations}</p>
+                <p className="text-xs sm:text-sm text-slate-600">Inscripciones confirmadas</p>
               </div>
             </div>
           </CardContent>
@@ -354,11 +354,11 @@ export default function AdminDashboard() {
       </div>
 
       {/* Main Content */}
-      <Tabs defaultValue="courses" className="space-y-6">
+      <Tabs defaultValue="courses" className="space-y-4 sm:space-y-6">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="courses">Cursos</TabsTrigger>
-          <TabsTrigger value="commissions">Comisiones</TabsTrigger> 
-          <TabsTrigger value="registrations">Inscripciones</TabsTrigger>
+          <TabsTrigger value="courses" className="text-xs sm:text-sm">Cursos</TabsTrigger>
+          <TabsTrigger value="commissions" className="text-xs sm:text-sm">Comisiones</TabsTrigger> 
+          <TabsTrigger value="registrations" className="text-xs sm:text-sm">Inscripciones</TabsTrigger>
         </TabsList>
 
         {/* Courses Tab */}

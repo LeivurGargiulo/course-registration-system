@@ -2,6 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  
+  /* Mobile responsive improvements */
+  @media (max-width: 640px) {
+    .container {
+      @apply px-4;
+    }
+  }
+  
+  /* Ensure form inputs are properly sized on mobile */
+  input, textarea, select {
+    @apply min-h-[44px] text-base;
+  }
+  
+  /* Improve touch targets for mobile */
+  button, [role="button"] {
+    @apply min-h-[44px] min-w-[44px];
+  }
+}
+
 :root {
   --background: hsl(0, 0%, 100%);
   --foreground: hsl(222.2, 84%, 4.9%);
