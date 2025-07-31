@@ -355,11 +355,10 @@ export default function AdminDashboard() {
 
       {/* Main Content */}
       <Tabs defaultValue="courses" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="courses">Cursos</TabsTrigger>
           <TabsTrigger value="commissions">Comisiones</TabsTrigger> 
           <TabsTrigger value="registrations">Inscripciones</TabsTrigger>
-          <TabsTrigger value="analytics">Analíticas</TabsTrigger>
         </TabsList>
 
         {/* Courses Tab */}
@@ -764,64 +763,7 @@ export default function AdminDashboard() {
           </Card>
         </TabsContent>
 
-        {/* Analytics Tab */}
-        <TabsContent value="analytics">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Resumen de Inscripciones</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
-                    <span className="text-emerald-800 font-medium">Confirmadas</span>
-                    <span className="text-2xl font-bold text-emerald-900">{confirmedRegistrations}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg">
-                    <span className="text-amber-800 font-medium">Pendientes</span>
-                    <span className="text-2xl font-bold text-amber-900">
-                      {registrations?.filter(r => r.status === "pending").length || 0}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                    <span className="text-red-800 font-medium">Canceladas</span>
-                    <span className="text-2xl font-bold text-red-900">
-                      {registrations?.filter(r => r.status === "cancelled").length || 0}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Información de la Comunidad</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {registrations && registrations.length > 0 ? (
-                    <>
-                      <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                        <span className="text-purple-800 font-medium">Comunidad TTNb</span>
-                        <span className="text-2xl font-bold text-purple-900">
-                          {registrations.filter(r => r.communityAffiliation === "si").length}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                        <span className="text-blue-800 font-medium">Newsletter</span>
-                        <span className="text-2xl font-bold text-blue-900">
-                          {registrations.filter(r => r.newsletter).length}
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    <p className="text-slate-600 text-center py-4">No hay datos disponibles</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
       </Tabs>
     </div>
   );
