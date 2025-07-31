@@ -8,10 +8,8 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Configure for Render PostgreSQL or local development
-const isProduction = process.env.NODE_ENV === 'production';
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  ssl: isProduction ? { rejectUnauthorized: false } : false
+  ssl: { rejectUnauthorized: false }
 });
 export const db = drizzle(pool, { schema });
