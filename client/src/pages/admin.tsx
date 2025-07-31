@@ -7,16 +7,34 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { apiRequest } from "@/lib/queryClient";
-import type { CourseWithCommissions, Registration } from "@shared/schema";
+import { Plus, Edit2, Trash2, AlertTriangle, Clock, Users } from "lucide-react";
+import type { CourseWithCommissions, Registration, Commission, InsertCommission } from "@shared/schema";
 
 export default function AdminDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user, isLoading: authLoading, isAuthenticated, isAdmin } = useAuth();
+  
+  // Commission form state
+  const [isCommissionDialogOpen, setIsCommissionDialogOpen] = useState(false);
+  const [editingCommission, setEditingCommission] = useState<Commission | null>(null);
+  const [commissionForm, setCommissionForm] = useState<Partial<InsertCommission>>({
+    courseId: '',
+    code: '',
+    days: '',
+    time: '',
+    instructor: '',
+    maxCapacity: 20,
+    startDate: '',
+  });
 
   // Redirect if not authenticated or not admin
   useEffect(() => {
@@ -45,6 +63,13 @@ export default function AdminDashboard() {
     enabled: isAuthenticated && isAdmin,
   });
 
+  // Fetch low enrollment commissions
+  const { data: lowEnrollmentCommissions } = useQuery<Commission[]>({
+    queryKey: ["/api/admin/commissions/low-enrollment"],
+    retry: false,
+    enabled: isAuthenticated && isAdmin,
+  });
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "confirmed":
@@ -63,6 +88,133 @@ export default function AdminDashboard() {
     if (percentage >= 90) return { color: "bg-red-500", label: "Completa" };
     if (percentage >= 70) return { color: "bg-amber-500", label: "Casi completa" };
     return { color: "bg-emerald-500", label: "Disponible" };
+  };
+
+  // Commission mutations
+  const createCommissionMutation = useMutation({
+    mutationFn: async (commissionData: InsertCommission) => {
+      return await apiRequest("/api/admin/commissions", "POST", commissionData);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Comisión creada",
+        description: "La comisión se ha creado exitosamente",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
+      setIsCommissionDialogOpen(false);
+      setCommissionForm({
+        courseId: '',
+        code: '',
+        days: '',
+        time: '',
+        instructor: '',
+        maxCapacity: 20,
+        startDate: '',
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error as Error)) {
+        toast({
+          title: "No autorizado",
+          description: "Tu sesión ha expirado. Redirigiendo al login...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 1500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: (error as Error).message || "Error al crear la comisión",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateCommissionMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Commission> }) => {
+      return await apiRequest(`/api/admin/commissions/${id}`, "PUT", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Comisión actualizada",
+        description: "La comisión se ha actualizado exitosamente",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
+      setEditingCommission(null);
+      setIsCommissionDialogOpen(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: (error as Error).message || "Error al actualizar la comisión",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteCommissionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest(`/api/admin/commissions/${id}`, "DELETE");
+    },
+    onSuccess: () => {
+      toast({
+        title: "Comisión eliminada",
+        description: "La comisión se ha eliminado exitosamente",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: (error as Error).message || "Error al eliminar la comisión",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateCommission = () => {
+    if (!commissionForm.courseId || !commissionForm.code || !commissionForm.days || 
+        !commissionForm.time || !commissionForm.instructor || !commissionForm.startDate) {
+      toast({
+        title: "Campos requeridos",
+        description: "Por favor complete todos los campos obligatorios",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    createCommissionMutation.mutate(commissionForm as InsertCommission);
+  };
+
+  const handleEditCommission = (commission: Commission) => {
+    setEditingCommission(commission);
+    setCommissionForm({
+      courseId: commission.courseId,
+      code: commission.code,
+      days: commission.days, 
+      time: commission.time,
+      instructor: commission.instructor,
+      maxCapacity: commission.maxCapacity,
+      startDate: commission.startDate,
+    });
+    setIsCommissionDialogOpen(true);
+  };
+
+  const handleUpdateCommission = () => {
+    if (!editingCommission) return;
+    
+    updateCommissionMutation.mutate({
+      id: editingCommission.id,
+      data: commissionForm as Partial<Commission>
+    });
+  };
+
+  const handleDeleteCommission = (id: string) => {
+    if (confirm("¿Estás seguro de que quieres eliminar esta comisión?")) {
+      deleteCommissionMutation.mutate(id);
+    }
   };
 
   // Handle authorization errors
@@ -203,8 +355,9 @@ export default function AdminDashboard() {
 
       {/* Main Content */}
       <Tabs defaultValue="courses" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="courses">Cursos</TabsTrigger>
+          <TabsTrigger value="commissions">Comisiones</TabsTrigger> 
           <TabsTrigger value="registrations">Inscripciones</TabsTrigger>
           <TabsTrigger value="analytics">Analíticas</TabsTrigger>
         </TabsList>
@@ -269,6 +422,22 @@ export default function AdminDashboard() {
                                     <div>Profesor: {commission.instructor}</div>
                                     <div>Inscriptos: {commission.currentEnrollment}/{commission.maxCapacity}</div>
                                   </div>
+                                  <div className="flex items-center space-x-1 mt-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleEditCommission(commission)}
+                                    >
+                                      <Edit2 className="w-3 h-3" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleDeleteCommission(commission.id)}
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                  </div>
                                 </div>
                               );
                             })}
@@ -287,6 +456,257 @@ export default function AdminDashboard() {
                   </div>
                   <h3 className="text-lg font-medium text-slate-900 mb-1">No hay cursos disponibles</h3>
                   <p className="text-slate-600">Los cursos aparecerán aquí una vez creados.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Commission Management Tab */}
+        <TabsContent value="commissions">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Gestión de Comisiones</CardTitle>
+              <Dialog open={isCommissionDialogOpen} onOpenChange={setIsCommissionDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => {
+                    setEditingCommission(null);
+                    setCommissionForm({
+                      courseId: '',
+                      code: '',
+                      days: '',
+                      time: '',
+                      instructor: '',
+                      maxCapacity: 20,
+                      startDate: '',
+                    });
+                  }}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nueva Comisión
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[525px]">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingCommission ? "Editar Comisión" : "Crear Nueva Comisión"}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {editingCommission 
+                        ? "Modifica los datos de la comisión existente."
+                        : "Crea una nueva comisión para un curso existente."
+                      }
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="course" className="text-right">
+                        Curso
+                      </Label>
+                      <Select
+                        value={commissionForm.courseId}
+                        onValueChange={(value) => setCommissionForm({...commissionForm, courseId: value})}
+                      >
+                        <SelectTrigger className="col-span-3">
+                          <SelectValue placeholder="Selecciona un curso" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {courses?.map((course) => (
+                            <SelectItem key={course.id} value={course.id}>
+                              {course.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="code" className="text-right">
+                        Código
+                      </Label>
+                      <Input
+                        id="code"
+                        value={commissionForm.code}
+                        onChange={(e) => setCommissionForm({...commissionForm, code: e.target.value})}
+                        placeholder="M1LN01"
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="days" className="text-right">
+                        Días
+                      </Label>
+                      <Input
+                        id="days"
+                        value={commissionForm.days}
+                        onChange={(e) => setCommissionForm({...commissionForm, days: e.target.value})}
+                        placeholder="Martes y Jueves"
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="time" className="text-right">
+                        Horario
+                      </Label>
+                      <Input
+                        id="time"
+                        value={commissionForm.time}
+                        onChange={(e) => setCommissionForm({...commissionForm, time: e.target.value})}
+                        placeholder="19:00 - 21:00"
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="instructor" className="text-right">
+                        Instructor
+                      </Label>
+                      <Input
+                        id="instructor"
+                        value={commissionForm.instructor}
+                        onChange={(e) => setCommissionForm({...commissionForm, instructor: e.target.value})}
+                        placeholder="Nombre del instructor"
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="capacity" className="text-right">
+                        Capacidad
+                      </Label>
+                      <Input
+                        id="capacity"
+                        type="number"
+                        min="5"
+                        max="30"
+                        value={commissionForm.maxCapacity}
+                        onChange={(e) => setCommissionForm({...commissionForm, maxCapacity: parseInt(e.target.value)})}
+                        className="col-span-3"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="startDate" className="text-right">
+                        Fecha Inicio
+                      </Label>
+                      <Input
+                        id="startDate"
+                        value={commissionForm.startDate}
+                        onChange={(e) => setCommissionForm({...commissionForm, startDate: e.target.value})}
+                        placeholder="15 de marzo"
+                        className="col-span-3"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      onClick={editingCommission ? handleUpdateCommission : handleCreateCommission}
+                      disabled={createCommissionMutation.isPending || updateCommissionMutation.isPending}
+                    >
+                      {createCommissionMutation.isPending || updateCommissionMutation.isPending ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      ) : null}
+                      {editingCommission ? "Actualizar" : "Crear"} Comisión
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent>
+              {/* Low enrollment warning */}
+              {lowEnrollmentCommissions && lowEnrollmentCommissions.length > 0 && (
+                <Alert className="mb-4 border-amber-200 bg-amber-50">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-amber-800">
+                    <strong>Atención:</strong> Hay {lowEnrollmentCommissions.length} comisión(es) con inscripciones por debajo del mínimo (5 estudiantes).
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {courses && courses.length > 0 ? (
+                <div className="space-y-6">
+                  {courses.map((course) => (
+                    <div key={course.id} className="border border-slate-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h4 className="text-lg font-semibold text-slate-900">{course.name}</h4>
+                          <p className="text-sm text-slate-600">{course.level} - {course.duration}</p>
+                        </div>
+                        <Badge className="bg-blue-100 text-blue-800">
+                          {course.commissions.length} comisiones
+                        </Badge>
+                      </div>
+                      
+                      {course.commissions.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {course.commissions.map((commission) => {
+                            const status = getAvailabilityStatus(commission.currentEnrollment, commission.maxCapacity);
+                            const isLowEnrollment = commission.currentEnrollment < 5;
+                            
+                            return (
+                              <div key={commission.id} className={`border rounded-lg p-4 ${isLowEnrollment ? 'border-amber-200 bg-amber-50' : 'border-slate-200 bg-white'}`}>
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="font-semibold text-slate-900">{commission.code}</span>
+                                  <div className="flex items-center space-x-2">
+                                    {isLowEnrollment && (
+                                      <AlertTriangle className="w-4 h-4 text-amber-600" />
+                                    )}
+                                    <div className={`w-2 h-2 rounded-full ${status.color}`}></div>
+                                  </div>
+                                </div>
+                                
+                                <div className="space-y-2 text-sm text-slate-600 mb-3">
+                                  <div className="flex items-center">
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    {commission.days} - {commission.time}
+                                  </div>
+                                  <div>
+                                    <strong>Instructor:</strong> {commission.instructor}
+                                  </div>
+                                  <div className="flex items-center">
+                                    <Users className="w-3 h-3 mr-1" />
+                                    {commission.currentEnrollment}/{commission.maxCapacity} inscriptos
+                                  </div>
+                                  <div>
+                                    <strong>Inicio:</strong> {commission.startDate}
+                                  </div>
+                                </div>
+                                
+                                <div className="flex items-center justify-between">
+                                  <Badge className={`${status.color.replace('bg-', 'bg-opacity-20 text-')} text-xs`}>
+                                    {status.label}
+                                  </Badge>
+                                  <div className="flex items-center space-x-1">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleEditCommission(commission)}
+                                    >
+                                      <Edit2 className="w-3 h-3" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleDeleteCommission(commission.id)}
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="text-center py-6 text-slate-500">
+                          <p>No hay comisiones para este curso</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-slate-400 mb-2">
+                    <Clock className="w-8 h-8 mx-auto" />
+                  </div>
+                  <h3 className="text-lg font-medium text-slate-900 mb-1">No hay cursos disponibles</h3>
+                  <p className="text-slate-600">Necesitas cursos antes de crear comisiones.</p>
                 </div>
               )}
             </CardContent>

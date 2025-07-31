@@ -1,7 +1,7 @@
 import { type User, type InsertUser, type Course, type InsertCourse, type Commission, type InsertCommission, type Registration, type InsertRegistration, type CourseWithCommissions, type CommissionWithAvailability } from "@shared/schema";
 import { users, courses, commissions, registrations, sessions } from "@shared/schema";
 import { randomUUID } from "crypto";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, ne, lt } from "drizzle-orm";
 
 // Database connection will be handled dynamically
 let db: any = null;
@@ -27,6 +27,10 @@ export interface IStorage {
   getCommissionsByCourse(courseId: string): Promise<CommissionWithAvailability[]>;
   getCommission(id: string): Promise<Commission | undefined>;
   createCommission(commission: InsertCommission): Promise<Commission>;
+  updateCommission(id: string, updates: Partial<Commission>): Promise<Commission>;
+  deleteCommission(id: string): Promise<void>;
+  checkScheduleConflict(courseId: string, days: string, time: string, excludeId?: string): Promise<boolean>;
+  getCommissionsWithLowEnrollment(threshold?: number): Promise<Commission[]>;
   
   // Registration methods
   createRegistration(registration: InsertRegistration): Promise<Registration>;
@@ -182,6 +186,47 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return newCommission;
+  }
+
+  async updateCommission(id: string, updates: Partial<Commission>): Promise<Commission> {
+    const [updatedCommission] = await this.db
+      .update(commissions)
+      .set({ ...updates, createdAt: undefined })
+      .where(eq(commissions.id, id))
+      .returning();
+    return updatedCommission;
+  }
+
+  async deleteCommission(id: string): Promise<void> {
+    await this.db
+      .update(commissions)
+      .set({ isActive: false })
+      .where(eq(commissions.id, id));
+  }
+
+  async checkScheduleConflict(courseId: string, days: string, time: string, excludeId?: string): Promise<boolean> {
+    const query = this.db
+      .select()
+      .from(commissions)
+      .where(eq(commissions.courseId, courseId))
+      .where(eq(commissions.days, days))
+      .where(eq(commissions.time, time))
+      .where(eq(commissions.isActive, true));
+
+    if (excludeId) {
+      query.where(ne(commissions.id, excludeId));
+    }
+
+    const conflicts = await query;
+    return conflicts.length > 0;
+  }
+
+  async getCommissionsWithLowEnrollment(threshold: number = 5): Promise<Commission[]> {
+    return await this.db
+      .select()
+      .from(commissions)
+      .where(eq(commissions.isActive, true))
+      .where(lt(commissions.currentEnrollment, threshold));
   }
 
   async createRegistration(registration: InsertRegistration): Promise<Registration> {
@@ -396,8 +441,12 @@ export class MemStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
     const user: User = { 
-      ...insertUser, 
+      ...insertUser,
       id,
+      email: insertUser.email || null,
+      firstName: insertUser.firstName || null,
+      lastName: insertUser.lastName || null,
+      profileImageUrl: insertUser.profileImageUrl || null,
       isActive: insertUser.isActive ?? true,
       resetToken: null,
       resetTokenExpiry: null,
@@ -514,6 +563,49 @@ export class MemStorage implements IStorage {
     };
     this.commissions.set(id, newCommission);
     return newCommission;
+  }
+
+  async updateCommission(id: string, updates: Partial<Commission>): Promise<Commission> {
+    const commission = this.commissions.get(id);
+    if (!commission) {
+      throw new Error('Commission not found');
+    }
+    
+    const updatedCommission: Commission = {
+      ...commission,
+      ...updates,
+      id, // Preserve original ID
+      createdAt: commission.createdAt, // Preserve creation date
+    };
+    
+    this.commissions.set(id, updatedCommission);
+    return updatedCommission;
+  }
+
+  async deleteCommission(id: string): Promise<void> {
+    const commission = this.commissions.get(id);
+    if (commission) {
+      commission.isActive = false;
+      this.commissions.set(id, commission);
+    }
+  }
+
+  async checkScheduleConflict(courseId: string, days: string, time: string, excludeId?: string): Promise<boolean> {
+    const allCommissions = Array.from(this.commissions.values());
+    const conflicts = allCommissions.filter(commission => 
+      commission.courseId === courseId &&
+      commission.days === days &&
+      commission.time === time &&
+      commission.isActive &&
+      commission.id !== excludeId
+    );
+    return conflicts.length > 0;
+  }
+
+  async getCommissionsWithLowEnrollment(threshold: number = 5): Promise<Commission[]> {
+    return Array.from(this.commissions.values()).filter(commission =>
+      commission.isActive && commission.currentEnrollment < threshold
+    );
   }
 
   async createRegistration(registration: InsertRegistration): Promise<Registration> {

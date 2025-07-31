@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertRegistrationSchema, loginSchema, passwordResetRequestSchema, passwordResetSchema } from "@shared/schema";
+import { insertRegistrationSchema, loginSchema, passwordResetRequestSchema, passwordResetSchema, insertCommissionSchema, updateCommissionSchema, commissionCancellationSchema } from "@shared/schema";
 import { AuthService, requireAuth, requireAdmin, loadUser, configureSession } from "./auth";
 import { emailService } from "./email";
 import { z } from "zod";
@@ -248,6 +248,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching registrations:", error);
       res.status(500).json({ message: "Error interno del servidor" });
+    }
+  });
+
+  // Commission management routes (admin only)
+  app.post("/api/admin/commissions", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const validatedData = insertCommissionSchema.parse(req.body);
+      
+      // Check for schedule conflicts
+      const hasConflict = await storage.checkScheduleConflict(
+        validatedData.courseId, 
+        validatedData.days, 
+        validatedData.time
+      );
+      
+      if (hasConflict) {
+        return res.status(400).json({ 
+          message: "Conflicto de horario: Ya existe una comisión con el mismo día y horario para este curso" 
+        });
+      }
+
+      const commission = await storage.createCommission(validatedData);
+      res.status(201).json(commission);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0]?.message || "Datos inválidos" });
+      }
+      res.status(500).json({ message: "Error al crear la comisión" });
+    }
+  });
+
+  app.put("/api/admin/commissions/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = updateCommissionSchema.parse({ ...req.body, id });
+      
+      // Check for schedule conflicts if updating schedule
+      if (validatedData.days && validatedData.time) {
+        const hasConflict = await storage.checkScheduleConflict(
+          validatedData.courseId!, 
+          validatedData.days, 
+          validatedData.time,
+          id // Exclude current commission from conflict check
+        );
+        
+        if (hasConflict) {
+          return res.status(400).json({ 
+            message: "Conflicto de horario: Ya existe una comisión con el mismo día y horario" 
+          });
+        }
+      }
+
+      const commission = await storage.updateCommission(id, validatedData);
+      res.json(commission);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0]?.message || "Datos inválidos" });
+      }
+      res.status(500).json({ message: "Error al actualizar la comisión" });
+    }
+  });
+
+  app.delete("/api/admin/commissions/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteCommission(id);
+      res.json({ message: "Comisión eliminada exitosamente" });
+    } catch (error) {
+      res.status(500).json({ message: "Error al eliminar la comisión" });
+    }
+  });
+
+  app.post("/api/admin/commissions/:id/cancel", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const validatedData = commissionCancellationSchema.parse({ ...req.body, id });
+      
+      const commission = await storage.getCommission(id);
+      if (!commission) {
+        return res.status(404).json({ message: "Comisión no encontrada" });
+      }
+
+      // Mark commission as inactive
+      await storage.updateCommission(id, { 
+        isActive: false,
+        cancelReason: validatedData.reason 
+      });
+
+      // TODO: Send cancellation notifications to enrolled students if requested
+      if (validatedData.notifyStudents) {
+        console.log(`Notification would be sent to students about commission ${id} cancellation`);
+      }
+
+      res.json({ message: "Comisión cancelada exitosamente" });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: error.errors[0]?.message || "Datos inválidos" });
+      }
+      res.status(500).json({ message: "Error al cancelar la comisión" });
+    }
+  });
+
+  app.get("/api/admin/commissions/low-enrollment", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const threshold = parseInt(req.query.threshold as string) || 5;
+      const lowEnrollmentCommissions = await storage.getCommissionsWithLowEnrollment(threshold);
+      res.json(lowEnrollmentCommissions);
+    } catch (error) {
+      res.status(500).json({ message: "Error al obtener comisiones con baja inscripción" });
     }
   });
 

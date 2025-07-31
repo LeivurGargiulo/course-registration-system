@@ -50,6 +50,7 @@ export const commissions = pgTable("commissions", {
   currentEnrollment: integer("current_enrollment").notNull().default(0),
   startDate: text("start_date").notNull(),
   isActive: boolean("is_active").notNull().default(true),
+  cancelReason: text("cancel_reason"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -77,6 +78,23 @@ export const insertCourseSchema = createInsertSchema(courses).omit({
 export const insertCommissionSchema = createInsertSchema(commissions).omit({
   id: true,
   createdAt: true,
+}).extend({
+  code: z.string().min(3, "El código debe tener al menos 3 caracteres").max(10, "El código no puede exceder 10 caracteres"),
+  days: z.string().min(1, "Los días son obligatorios"),
+  time: z.string().min(1, "El horario es obligatorio"),
+  instructor: z.string().min(2, "El nombre del instructor debe tener al menos 2 caracteres"),
+  maxCapacity: z.number().min(5, "La capacidad mínima es 5 estudiantes").max(30, "La capacidad máxima es 30 estudiantes"),
+  startDate: z.string().min(1, "La fecha de inicio es obligatoria"),
+});
+
+export const updateCommissionSchema = insertCommissionSchema.partial().extend({
+  id: z.string(),
+});
+
+export const commissionCancellationSchema = z.object({
+  id: z.string().min(1, "ID de comisión requerido"),
+  reason: z.string().min(10, "Debe proporcionar una razón de al menos 10 caracteres"),
+  notifyStudents: z.boolean().default(true),
 });
 
 export const insertRegistrationSchema = createInsertSchema(registrations).omit({
@@ -133,6 +151,8 @@ export type Course = typeof courses.$inferSelect;
 export type InsertCourse = z.infer<typeof insertCourseSchema>;
 export type Commission = typeof commissions.$inferSelect;
 export type InsertCommission = z.infer<typeof insertCommissionSchema>;
+export type UpdateCommission = z.infer<typeof updateCommissionSchema>;
+export type CommissionCancellation = z.infer<typeof commissionCancellationSchema>;
 export type Registration = typeof registrations.$inferSelect;
 export type InsertRegistration = z.infer<typeof insertRegistrationSchema>;
 
