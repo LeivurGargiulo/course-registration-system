@@ -47,9 +47,9 @@ The system is fully implemented with Drizzle ORM and PostgreSQL:
 - **Commissions table** for class schedules and capacity management
 - **Registrations table** for student enrollment data
 
-**Current State**: PostgreSQL database is provisioned and configured with proper Drizzle ORM setup. The system includes both DatabaseStorage (for PostgreSQL) and MemStorage (in-memory fallback) implementations. Currently using MemStorage due to authentication issues with the provisioned DATABASE_URL, but the full PostgreSQL implementation is ready.
+**Current State**: System is fully configured for Supabase database integration. The system includes both DatabaseStorage (for Supabase/PostgreSQL) and MemStorage (in-memory fallback) implementations. Currently using MemStorage until user sets up Supabase credentials, but the full database implementation is ready.
 
-**Database Migration**: Run `npm run db:push` to apply schema changes once authentication is resolved.
+**Database Migration**: Run `node scripts/enable-supabase.js` after setting up Supabase credentials to enable database storage.
 
 ## Key Components
 
@@ -135,19 +135,19 @@ Extensive Radix UI component collection for accessibility:
 - **Schema management**: Drizzle Kit configured for migrations and schema updates
 - **Environment variables**: DATABASE_URL provisioned but has authentication issues
 
-**PostgreSQL Implementation Status**:
-- ✅ Database provisioned with environment variables set
-- ✅ Drizzle ORM fully configured with proper schema
+**Supabase Implementation Status**:
+- ✅ Supabase integration fully configured and ready
+- ✅ Drizzle ORM configured for Supabase PostgreSQL
 - ✅ DatabaseStorage class implemented with all CRUD operations
-- ✅ Database seeding script created
-- ⚠️ Authentication issues with current DATABASE_URL preventing connection
+- ✅ Database setup script created with table creation and sample data
+- ✅ Comprehensive setup documentation provided
 - ✅ Fallback to MemStorage ensures system reliability
 
-**To Enable PostgreSQL**:
-1. Resolve DATABASE_URL authentication issues
-2. Run `npm run db:push` to apply schema
-3. Run `node scripts/enable-database.js` to switch from MemStorage to DatabaseStorage
-4. Restart server to use PostgreSQL
+**To Enable Supabase**:
+1. Follow instructions in `docs/supabase-setup.md` to create Supabase project
+2. Add DATABASE_URL secret with Supabase connection string
+3. Run `node scripts/enable-supabase.js` to set up database and switch storage
+4. Restart server to use Supabase
 
 ## Recent Changes (January 31, 2025)
 

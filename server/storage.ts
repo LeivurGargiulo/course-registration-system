@@ -71,10 +71,14 @@ export class DatabaseStorage implements IStorage {
     const allCourses = await db.select().from(courses);
     const allCommissions = await db.select().from(commissions);
     
-    return allCourses.map(course => ({
-      ...course,
-      commissions: allCommissions.filter(c => c.courseId === course.id)
-    }));
+    return allCourses.map(course => {
+      const courseCommissions = allCommissions.filter(c => c.courseId === course.id);
+      return {
+        ...course,
+        commissions: courseCommissions,
+        availableCommissions: courseCommissions.filter(c => c.isActive).length,
+      };
+    });
   }
 
   async getCourse(id: string): Promise<Course | undefined> {
@@ -90,7 +94,10 @@ export class DatabaseStorage implements IStorage {
   // Commission methods
   async getCommissionsByCourse(courseId: string): Promise<CommissionWithAvailability[]> {
     const courseCommissions = await db.select().from(commissions).where(eq(commissions.courseId, courseId));
-    return courseCommissions;
+    return courseCommissions.map(commission => ({
+      ...commission,
+      availableSpots: commission.maxCapacity - commission.currentEnrollment,
+    }));
   }
 
   async getCommission(id: string): Promise<Commission | undefined> {
@@ -226,10 +233,14 @@ export class MemStorage implements IStorage {
   // Course methods
   async getCourses(): Promise<CourseWithCommissions[]> {
     const courseList = Array.from(this.courses.values());
-    return courseList.map(course => ({
-      ...course,
-      commissions: Array.from(this.commissions.values()).filter(c => c.courseId === course.id)
-    }));
+    return courseList.map(course => {
+      const courseCommissions = Array.from(this.commissions.values()).filter(c => c.courseId === course.id);
+      return {
+        ...course,
+        commissions: courseCommissions,
+        availableCommissions: courseCommissions.filter(c => c.isActive).length,
+      };
+    });
   }
 
   async getCourse(id: string): Promise<Course | undefined> {
@@ -240,6 +251,7 @@ export class MemStorage implements IStorage {
     const newCourse: Course = {
       id: `course-${Date.now()}`,
       ...course,
+      isActive: course.isActive ?? true,
       createdAt: new Date(),
     };
     this.courses.set(newCourse.id, newCourse);
@@ -248,7 +260,11 @@ export class MemStorage implements IStorage {
 
   // Commission methods
   async getCommissionsByCourse(courseId: string): Promise<CommissionWithAvailability[]> {
-    return Array.from(this.commissions.values()).filter(c => c.courseId === courseId);
+    const courseCommissions = Array.from(this.commissions.values()).filter(c => c.courseId === courseId);
+    return courseCommissions.map(commission => ({
+      ...commission,
+      availableSpots: commission.maxCapacity - commission.currentEnrollment,
+    }));
   }
 
   async getCommission(id: string): Promise<Commission | undefined> {
@@ -299,6 +315,7 @@ export class MemStorage implements IStorage {
     const newRegistration: Registration = {
       id: `reg-${Date.now()}`,
       ...registration,
+      newsletter: registration.newsletter ?? false,
       status: "pending",
       createdAt: new Date(),
     };
