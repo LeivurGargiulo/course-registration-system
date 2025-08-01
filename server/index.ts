@@ -37,12 +37,12 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Server starts with in-memory storage for now
-  console.log("Starting server with Replit Auth integration");
+  // Server starts with in-memory storage
+  console.log("Starting server...");
 
   const server = await registerRoutes(app);
 
-  // Server ready with Replit Auth integration
+  // Server ready
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

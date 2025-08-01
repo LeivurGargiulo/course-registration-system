@@ -33,9 +33,9 @@ export default function Home() {
               variant="outline" 
               size="sm"
               className="text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2"
-              onClick={() => window.location.href = "/api/logout"}
+              onClick={() => window.location.href = "/"}
             >
-              Cerrar Sesión
+              Salir
             </Button>
           </div>
         </div>

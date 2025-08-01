@@ -20,7 +20,7 @@ import { eq, ne, lt, sql } from "drizzle-orm";
 
 // Interface for storage operations
 export interface IStorage {
-  // User operations (mandatory for Replit Auth)
+  // User operations
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   
@@ -45,7 +45,7 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // User operations (mandatory for Replit Auth)
+  // User operations
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
@@ -173,6 +173,18 @@ export class MemStorage implements IStorage {
   }
 
   private seedData() {
+    // Seed a development user
+    const devUser: User = {
+      id: 'dev-user-1',
+      email: 'dev@example.com',
+      firstName: 'Dev',
+      lastName: 'User',
+      profileImageUrl: null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.users.set(devUser.id, devUser);
+
     // Seed courses
     const course1: Course = {
       id: "course-1",
@@ -207,7 +219,7 @@ export class MemStorage implements IStorage {
     this.commissions.set(commission1.id, commission1);
   }
 
-  // User operations (mandatory for Replit Auth)
+  // User operations
   async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
   }

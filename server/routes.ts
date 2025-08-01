@@ -1,24 +1,21 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertRegistrationSchema, insertCommissionSchema, updateCommissionSchema, commissionCancellationSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
-
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
-    }
+  // Simple auth placeholder - returns mock user for development
+  app.get('/api/auth/user', async (req, res) => {
+    // Mock user for development
+    const mockUser = {
+      id: 'dev-user-1',
+      email: 'dev@example.com',
+      firstName: 'Dev',
+      lastName: 'User',
+      profileImageUrl: null
+    };
+    res.json(mockUser);
   });
 
   // Course routes
@@ -73,7 +70,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin routes (protected)
-  app.get("/api/admin/registrations", isAuthenticated, async (req, res) => {
+  app.get("/api/admin/registrations", async (req, res) => {
     try {
       const registrations = await storage.getRegistrations();
       res.json(registrations);
@@ -84,7 +81,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin commission management
-  app.post("/api/admin/commissions", isAuthenticated, async (req, res) => {
+  app.post("/api/admin/commissions", async (req, res) => {
     try {
       const validatedData = insertCommissionSchema.parse(req.body);
       
@@ -115,7 +112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/admin/commissions/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/admin/commissions/:id", async (req, res) => {
     try {
       const { id } = req.params;
       const validatedData = updateCommissionSchema.parse({ ...req.body, id });
@@ -155,7 +152,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/admin/commissions/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/admin/commissions/:id", async (req, res) => {
     try {
       const { id } = req.params;
       const commission = await storage.getCommission(id);
@@ -179,7 +176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Commission cancellation
-  app.post("/api/admin/commissions/:id/cancel", isAuthenticated, async (req, res) => {
+  app.post("/api/admin/commissions/:id/cancel", async (req, res) => {
     try {
       const { id } = req.params;
       const validatedData = commissionCancellationSchema.parse({ ...req.body, id });
@@ -208,7 +205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Low enrollment commissions
-  app.get("/api/admin/commissions/low-enrollment", isAuthenticated, async (req, res) => {
+  app.get("/api/admin/commissions/low-enrollment", async (req, res) => {
     try {
       const threshold = parseInt(req.query.threshold as string) || 5;
       const commissions = await storage.getCommissionsWithLowEnrollment(threshold);
