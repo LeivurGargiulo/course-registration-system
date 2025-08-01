@@ -47,7 +47,7 @@ export default function Home() {
           {/* Welcome Section */}
           <div className="text-center mb-8 sm:mb-12">
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3 sm:mb-4">
-              ¡Bienvenide al Sistema de Inscripciones! 🌟
+              ¡Bienvenido al Sistema de Inscripciones! 🌟
             </h2>
             <p className="text-slate-600 text-base sm:text-lg px-2">
               Desde aquí puedes inscribirte a nuestros cursos de desarrollo web y acceder a funciones administrativas.
@@ -102,7 +102,7 @@ export default function Home() {
             <CardHeader className="pb-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex-1">
-                  <CardTitle className="text-xl sm:text-2xl mb-1 sm:mb-2">Maquetado Web Nivel I</CardTitle>
+                  <CardTitle className="text-xl sm:text-2xl mb-1 sm:mb-2">Desarrollo Web Frontend</CardTitle>
                   <CardDescription className="text-indigo-100 text-sm sm:text-base">
                     Nuestro curso estrella de introducción al desarrollo web frontend
                   </CardDescription>
@@ -117,6 +117,7 @@ export default function Home() {
                   <ul className="text-indigo-100 space-y-1 text-xs sm:text-sm">
                     <li>• HTML5 semántico y accesible</li>
                     <li>• CSS3 moderno y responsive design</li>
+                    <li>• JavaScript básico e interactividad</li>
                     <li>• Flexbox y CSS Grid</li>
                     <li>• Mejores prácticas de desarrollo</li>
                   </ul>
@@ -126,7 +127,7 @@ export default function Home() {
                   <ul className="text-indigo-100 space-y-1 text-xs sm:text-sm">
                     <li>• 8 semanas de duración</li>
                     <li>• Horarios flexibles</li>
-                    <li>• Ambiente inclusivo y seguro</li>
+                    <li>• Ambiente colaborativo</li>
                     <li>• Certificación incluida</li>
                   </ul>
                 </div>
@@ -163,7 +164,7 @@ export default function Home() {
       <footer className="bg-slate-50 py-8 px-4 mt-16">
         <div className="container mx-auto text-center">
           <p className="text-slate-600">
-            Sistema de Inscripciones - Cursos Web TTNb © 2024
+            Sistema de Inscripciones - Academia Web © 2024
           </p>
         </div>
       </footer>

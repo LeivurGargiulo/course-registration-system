@@ -60,7 +60,6 @@ export const registrations = pgTable("registrations", {
   pronouns: text("pronouns").notNull(),
   email: text("email").notNull(),
   discordUsername: text("discord_username").notNull(),
-  communityAffiliation: text("community_affiliation").notNull(), // "si", "no", "prefiero-no-decir"
   dataConsent: boolean("data_consent").notNull().default(false),
   newsletter: boolean("newsletter").notNull().default(false),
   status: text("status").notNull().default("pending"), // "pending", "confirmed", "cancelled"
@@ -103,7 +102,6 @@ export const insertRegistrationSchema = createInsertSchema(registrations).omit({
   pronouns: z.string().min(1, "Los pronombres son obligatorios"),
   email: z.string().email("Ingresa un email válido"),
   discordUsername: z.string().regex(/^.+#\d{4}$/, "Formato de Discord inválido (usuario#1234)"),
-  communityAffiliation: z.enum(["si", "no", "prefiero-no-decir"]),
   dataConsent: z.boolean().refine(val => val === true, "Debes aceptar el consentimiento de datos"),
 });
 

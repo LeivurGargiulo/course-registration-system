@@ -188,8 +188,8 @@ export class MemStorage implements IStorage {
     // Seed courses
     const course1: Course = {
       id: "course-1",
-      name: "Maquetado Web Nivel I",
-      description: "Introducción al maquetado web con HTML y CSS, enfocado en diseño responsive y accesible.",
+      name: "Desarrollo Web Frontend",
+      description: "Introducción completa al desarrollo web frontend con HTML, CSS y JavaScript, enfocado en diseño responsive y moderno.",
       level: "Principiante",
       duration: "8 semanas",
       totalWeeks: 8,
@@ -204,7 +204,7 @@ export class MemStorage implements IStorage {
     const commission1: Commission = {
       id: "comm-1",
       courseId: course1.id,
-      code: "M1LN01",
+      code: "FE101",
       days: "Martes y Jueves",
       time: "19:00 - 21:00",
       instructor: "Alex Martínez",
@@ -327,6 +327,7 @@ export class MemStorage implements IStorage {
     const newRegistration: Registration = {
       id: `reg-${Date.now()}`,
       ...registration,
+      communityAffiliation: "no", // Default value for backward compatibility
       newsletter: registration.newsletter ?? false,
       status: "pending",
       createdAt: new Date(),

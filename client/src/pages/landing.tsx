@@ -13,6 +13,7 @@ export default function Landing() {
               <span className="text-white font-bold text-xs sm:text-sm">CR</span>
             </div>
             <h1 className="text-lg sm:text-xl font-bold text-slate-900">Cursos Web TTNb</h1>
+            <h1 className="text-lg sm:text-xl font-bold text-slate-900">Academia Web</h1>
           </div>
           <Button 
             onClick={() => window.location.href = "/api/login"}
@@ -29,15 +30,15 @@ export default function Landing() {
         <div className="container mx-auto text-center">
           <div className="max-w-4xl mx-auto">
             <Badge className="mb-4 bg-indigo-100 text-indigo-800 hover:bg-indigo-200 text-xs sm:text-sm px-3 py-1">
-              ✨ Educación Inclusiva en Desarrollo Web
+              ✨ Aprende Desarrollo Web
             </Badge>
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 mb-4 sm:mb-6 leading-tight">
-              Aprende Desarrollo Web en un
-              <span className="text-indigo-600 block sm:inline"> Espacio Seguro</span>
+              Domina el Desarrollo Web
+              <span className="text-indigo-600 block sm:inline"> Desde Cero</span>
             </h2>
             <p className="text-lg sm:text-xl text-slate-600 mb-6 sm:mb-8 leading-relaxed px-2">
-              Cursos de maquetado web diseñados específicamente para la comunidad travesti-trans-no binaria. 
-              Un ambiente inclusivo donde tu identidad es respetada y celebrada.
+              Cursos de desarrollo web diseñados para principiantes y profesionales. 
+              Aprende las tecnologías más demandadas del mercado con instructores expertos.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center max-w-md sm:max-w-none mx-auto">
               <Button 
@@ -60,10 +61,10 @@ export default function Landing() {
         <div className="container mx-auto">
           <div className="text-center mb-8 sm:mb-12">
             <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-3 sm:mb-4">
-              ¿Por qué elegir nuestros cursos?
+              ¿Por qué estudiar con nosotros?
             </h3>
             <p className="text-slate-600 max-w-2xl mx-auto px-4 text-sm sm:text-base">
-              Ofrecemos una experiencia educativa única, diseñada para empoderar y construir comunidad.
+              Ofrecemos una experiencia educativa de calidad, diseñada para impulsar tu carrera profesional.
             </p>
           </div>
           
@@ -71,14 +72,14 @@ export default function Landing() {
             <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
               <CardHeader className="text-center pb-4">
                 <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                  <span className="text-xl sm:text-2xl">🏳️‍⚧️</span>
+                  <span className="text-xl sm:text-2xl">👥</span>
                 </div>
-                <CardTitle className="text-indigo-900 text-lg sm:text-xl">Espacio Inclusivo</CardTitle>
+                <CardTitle className="text-indigo-900 text-lg sm:text-xl">Ambiente Colaborativo</CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
                 <CardDescription className="text-center text-sm sm:text-base">
-                  Un ambiente seguro y afirmativo donde tu identidad de género es respetada. 
-                  Uso correcto de pronombres y políticas anti-discriminación.
+                  Un ambiente de aprendizaje colaborativo y respetuoso donde todos pueden crecer. 
+                  Fomentamos la diversidad y el intercambio de ideas.
                 </CardDescription>
               </CardContent>
             </Card>
@@ -92,8 +93,8 @@ export default function Landing() {
               </CardHeader>
               <CardContent className="pt-0">
                 <CardDescription className="text-center text-sm sm:text-base">
-                  Aprende HTML, CSS y técnicas de maquetado responsive con proyectos reales 
-                  y mentoría personalizada.
+                  Aprende HTML, CSS, JavaScript y frameworks modernos con proyectos reales 
+                  y seguimiento personalizado.
                 </CardDescription>
               </CardContent>
             </Card>
@@ -107,8 +108,8 @@ export default function Landing() {
               </CardHeader>
               <CardContent className="pt-0">
                 <CardDescription className="text-center text-sm sm:text-base">
-                  Conecta con otras personas de la comunidad TTNb, forma redes de apoyo 
-                  y crea oportunidades laborales juntas.
+                  Conecta con otros estudiantes y profesionales, forma redes de contacto 
+                  y accede a oportunidades laborales.
                 </CardDescription>
               </CardContent>
             </Card>
@@ -128,7 +129,7 @@ export default function Landing() {
               <CardHeader className="pb-4">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex-1">
-                    <CardTitle className="text-lg sm:text-xl text-indigo-900 mb-1">Maquetado Web Nivel I</CardTitle>
+                    <CardTitle className="text-lg sm:text-xl text-indigo-900 mb-1">Desarrollo Web Frontend</CardTitle>
                     <CardDescription className="text-sm sm:text-base">Introducción al desarrollo web frontend</CardDescription>
                   </div>
                   <Badge className="bg-emerald-100 text-emerald-800 self-start text-xs sm:text-sm px-2 py-1">Principiante</Badge>
@@ -141,6 +142,7 @@ export default function Landing() {
                     <ul className="text-slate-600 space-y-1 text-sm sm:text-base">
                       <li>• Fundamentos de HTML5 semántico</li>
                       <li>• CSS3 y diseño responsive</li>
+                      <li>• JavaScript básico e interactividad</li>
                       <li>• Flexbox y CSS Grid</li>
                       <li>• Accesibilidad web (WCAG)</li>
                       <li>• Herramientas de desarrollo</li>
@@ -168,10 +170,10 @@ export default function Landing() {
         <div className="container mx-auto text-center">
           <div className="max-w-2xl mx-auto">
             <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4 px-2">
-              ¿Lista para comenzar tu carrera en tech? 💜
+              ¿Listo para comenzar tu carrera en tech? 🚀
             </h3>
             <p className="text-indigo-100 mb-6 sm:mb-8 text-base sm:text-lg px-4">
-              Únete a nuestra comunidad y da el primer paso hacia tu futuro en desarrollo web.
+              Únete a nuestra academia y da el primer paso hacia tu futuro en desarrollo web.
             </p>
             <Button 
               size="lg" 
@@ -188,7 +190,7 @@ export default function Landing() {
       <footer className="bg-slate-900 py-8 px-4">
         <div className="container mx-auto text-center">
           <p className="text-slate-400">
-            © 2024 Cursos Web TTNb. Un espacio seguro para aprender y crecer juntas.
+            © 2024 Academia Web. Formando los desarrolladores del futuro.
           </p>
         </div>
       </footer>

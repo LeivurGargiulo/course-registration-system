@@ -5,7 +5,6 @@ export interface RegistrationFormData {
   pronouns: string;
   email: string;
   discordUsername: string;
-  communityAffiliation: "si" | "no" | "prefiero-no-decir" | "";
   dataConsent: boolean;
   newsletter: boolean;
 }

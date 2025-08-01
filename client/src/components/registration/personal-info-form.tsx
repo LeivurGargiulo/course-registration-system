@@ -140,36 +140,6 @@ export default function PersonalInfoForm({ formData, onComplete, onPrevious }: P
               />
 
               {/* Community Affiliation */}
-              <FormField
-                control={form.control}
-                name="communityAffiliation"
-                render={({ field }) => (
-                  <FormItem className="space-y-3">
-                    <FormLabel>¿Perteneces a la comunidad travesti-trans-no binarie?</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        className="space-y-2"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="si" id="si" />
-                          <Label htmlFor="si">Sí</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="no" id="no" />
-                          <Label htmlFor="no">No</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="prefiero-no-decir" id="prefiero-no-decir" />
-                          <Label htmlFor="prefiero-no-decir">Prefiero no decir</Label>
-                        </div>
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               {/* Data Consent */}
               <div className="border-t border-slate-200 pt-6">
